@@ -1,0 +1,86 @@
+Chaperone is a lightweight alternative to process environment managers like systemd or upstart. While chaperone provides an extensive
+feature set, including dependency-based startup, syslog logging, zombie harvesting, and job scheduling, it does all of this in a single 
+self-contained process that can run as a “system init” daemon or can run in userspace.
+
+Feature Includes:
+- Monitoring for all processes in the container, automatically shutting down the container when the last process exits
+- A complete, configurable syslog facility built in. No syslog daemon is required in your container.
+- The ability to start up system services in dependency order
+- A built-in cron scheduling service.
+
+
+pip3 install chaperone
+
+Config File Dir : /etc/chaperone.d
+If a directory is chosen, then only the top-level of the directory will be searched, and only files ending in .conf or .yaml will be 
+recognized and read in alphabetic order.
+
+Config: Service Decleration
+=============================
+YAML Version 2 Style:
+--------------------
+mysql.service:
+  command: "/etc/init.d/mysql start"
+
+apache2.service:
+  command: "/etc/init.d/apache2 start"
+  after: mysql.service
+
+YAML Flow Style:
+----------------
+mysql.service: {
+  command: "/etc/init.d/mysql start"
+}
+
+apache2.service: {
+  type: oneshot,
+  command: "/etc/init.d/apache2 start",
+  after: mysql.service,
+}
+
+
+Service Types:
+---------------
+simple (Default)
+forking
+oneshot
+notify
+inetd
+cron
+
+Service options for Dependency:
+----------------------------------
+after - A comma-separated list of services or service groups which must start before this service is allowed ot start (dependencies).
+before - A comma-separated list of services or service groups which cannot be started until this service starts successfully (dependents).
+
+Config: Environment variables
+=============================
+settings: {
+  ignore_failures: true,
+  env_set: {
+    'LANG': 'en_US.UTF-8',
+    'LC_CTYPE': '$(LANG)',
+    'PATH': '$(APPS_DIR)/bin:/usr/local/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/sbin',
+  },
+}
+
+OR
+
+settings: {
+   env_set: {
+     "GATEWAY_IP": "`ip route | awk '/default/ { print $3 }'`",
+     "HOSTNAME1": "$(`hostname -s`)",
+     "HOSTNAME2": "`hostname -s`",
+   }
+}
+
+Confg: Logging Declarations
+============================
+Chaperone has its own internal syslog service which listens on the /dev/log socket. However, by default, none of the messages sent to 
+the syslog will be stored or output unless logging declarations are made.
+
+console.logging: {
+  selector: '*.warn',
+  stdout: true,
+}
+
