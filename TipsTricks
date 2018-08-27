@@ -7,3 +7,53 @@ image) into the Docker image itself.
 ADD lets you do that too, but it also supports 2 other sources. First, you can use a URL instead of a local file / directory. Secondly, 
 you can extract a tar file from the source directly into the destination.
 
+Port Expose vs Publish
+=========================
+To lists all port mappings or a specific mapping for a Docker container
+  #docker port <CONTAINER_NAME>
+
+EXPOSE tells Docker the running container listens on specific network ports. This acts as a kind of port mapping documentation that 
+can then be used when publishing the ports.
+  #dockerfile
+    EXPOSE <port> [<port>/<protocol>...]
+  #via cmd line
+    docker run --expose=1234 my_app
+
+EXPOSE will not allow communication via the defined ports to containers outside of the same network or to the host machine. To allow 
+this to happen you need to PUBLISH the ports.
+
+Publish ports and map them to the host
+  To actually publish the port when running the container, use the -p flag on docker run to publish and map one or more ports, or the 
+-P flag to publish all exposed ports and map them to high-order ports.
+
+    docker run -p 80:80/tcp -p 80:80/udp my_app
+    -p flag is the host port, and the second is the container port.
+
+DOCKER COMPOSE expose vs ports
+  Like EXPOSE in a Dockerfile, this instruction is used to expose ports without publishing them to the host machine — they’ll only
+be accessible to linked services on the same network.
+expose:
+ - "3000"
+ - "8000"
+
+ports
+This is used to publish ports to a host. You can either use a short syntax, or give a more detailed configuration.
+Either specify both ports (HOST:CONTAINER), or just the container port (an ephemeral host port is chosen).
+
+ports:
+ - "3000"
+ - "8000:8000/tcp"
+ - "127.0.0.1:8001:8001"
+
+The long form syntax allows the configuration of additional fields that can’t be expressed in the short form.
+target: the port inside the container
+published: the publicly exposed port
+protocol: the port protocol (tcp or udp)
+mode: host for publishing a host port on each node, or ingress for a swarm mode port to be load balanced.
+ports:
+  - target: 80
+    published: 8080
+    protocol: tcp
+    mode: host
+    
+
